@@ -1,0 +1,6 @@
+@TP5Rojas_HostAddress = http://localhost:5277
+
+GET {{TP5Rojas_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
