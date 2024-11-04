@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 [Route("[controller]")]
 public class ProductoController : ControllerBase
 {
-    private readonly IProductoRepository repository;
+    private IProductoRepository repository;
 
     public ProductoController(IProductoRepository repository)
     {

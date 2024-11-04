@@ -9,7 +9,7 @@ public class PresupuestoRepository : IPresupuestoRepository
     public void CrearPresupuesto(Presupuestos presupuesto)
     {
         var queryString = $"INSERT INTO Presupuestos (idPresupuesto,NombreDestinatario,FechaCreacion) VALUES (@id,@nombre,@fecha);";
-        using (SqliteConnection connection = new SqliteConnection(queryString))
+        using (SqliteConnection connection = new SqliteConnection(connectionString))
         {
             connection.Open();
             var command = new SqliteCommand(queryString, connection);
@@ -37,30 +37,36 @@ public class PresupuestoRepository : IPresupuestoRepository
         SqliteConnection connection = new SqliteConnection(connectionString);
         var presupuestos = new List<Presupuestos>();
         SqliteCommand command = connection.CreateCommand();
-        command.CommandText = "SELECT * FROM Presupuestos INNER JOIN (PresupuestosDetalles INNER JOIN Productos USING(idProducto))USING(idPresupuesto)";
+        command.CommandText = "SELECT * FROM Presupuestos LEFT JOIN (PresupuestosDetalle INNER JOIN Productos USING(idProducto))USING(idPresupuesto)";
         connection.Open();
         using (SqliteDataReader reader = command.ExecuteReader())
         {
             while (reader.Read())
             {
                 var presupuesto = new Presupuestos();
-                
+
                 presupuesto.IdPresupuesto = Convert.ToInt32(reader["idPresupuesto"]);
                 presupuesto.NombreDestinatario = reader["NombreDestinatario"].ToString();
+
                 var detalle = new PresupuestosDetalle();
+                if (reader["Cantidad"] != DBNull.Value && reader["idProducto"] != DBNull.Value)
+                {
                     detalle.Cantidad = Convert.ToInt32(reader["Cantidad"]);
-                    detalle.Producto.IDProductos = Convert.ToInt32(reader["idProducto"]);
-                    detalle.Producto.Descripcion = reader["Descripcion"].ToString();
-                    detalle.Producto.Precio = Convert.ToInt32(reader["Cantidad"]);
-                    
+                    detalle.Producto = new Productos(Convert.ToInt32(reader["idProducto"]),reader["Descripcion"].ToString(),Convert.ToInt32(reader["Precio"])); 
+                }
+
                 var presupuestoExiste = presupuestos.Find(x => x.IdPresupuesto == Convert.ToInt32(reader["idPresupuesto"]));
-                if ( presupuestoExiste != null)
+                if (presupuestoExiste != null)
                 {
                     presupuestoExiste.Detalle.Add(detalle);
                 }
                 else
                 {
-                    presupuesto.Detalle.Add(detalle);
+                    if (detalle != null)
+                    {
+                        presupuesto.Detalle = new List<PresupuestosDetalle>();
+                        presupuesto.Detalle.Add(detalle);
+                    }
                     presupuestos.Add(presupuesto);
                 }
             }
